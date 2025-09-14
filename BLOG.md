@@ -174,7 +174,7 @@ Whether you're a researcher, developer, analyst, or just someone who values effi
 Connect with Anton:
 - 📧 [anton@selflayer.com](mailto:anton@selflayer.com)
 - 🐙 [GitHub](https://github.com/antonvice)
-- 🔗 [LinkedIn](https://linkedin.com/in/antonvice)
+- 🔗 [LinkedIn](https://linkedin.com/in/anton96vice)
 
 ---
 

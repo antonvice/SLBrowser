@@ -347,10 +347,11 @@ class CLI:
                 command, args = self.parse_command(command_input)
                 await self._execute_command(command, args)
 
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, asyncio.CancelledError):
                 self.console.print(
                     "\n[yellow]Use /quit or /exit to exit gracefully.[/yellow]"
                 )
+                break
             except Exception as e:
                 logger.exception("Unexpected error in command loop")
                 self.console.print(f"[red]Unexpected error: {e}[/red]")
@@ -931,5 +932,18 @@ async def main() -> None:
     await cli.run()
 
 
+def main_sync() -> None:
+    """Synchronous wrapper for main() - used by entry points."""
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        print("\n👋 Thanks for using SLBrowser!")
+    except Exception as e:
+        print(f"Error: {e}")
+        import sys
+
+        sys.exit(1)
+
+
 if __name__ == "__main__":
-    asyncio.run(main())
+    main_sync()

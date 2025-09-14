@@ -64,7 +64,7 @@ Documentation = "https://github.com/antonvice/slbrowser#readme"
 packages = ["slbrowser"]
 
 [project.scripts]
-slbrowser = "slbrowser.cli:main"
+slbrowser = "slbrowser.tui:main_sync"
 slb = "slbrowser.cli:main"
 
 [build-system]

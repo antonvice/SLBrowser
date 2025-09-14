@@ -57,7 +57,7 @@ pip install -e .
 
 2. **Configure SLBrowser**
    ```bash
-   slb
+   slbrowser
    # On first run, set your API key:
    /key YOUR_API_KEY_HERE
    ```
@@ -66,9 +66,23 @@ Your API key will be securely saved to `~/.slbrowser/api_key.txt` for future ses
 
 ## 📖 Usage
 
+SLBrowser provides two interfaces:
+
+- **`slbrowser`**: Interactive Terminal User Interface (TUI) with commands like `/find`, `/search`, `/key`
+- **`slb`**: Command Line Interface (CLI) for direct command execution with arguments
+
 ### Launch SLBrowser
+
+**Interactive TUI (Recommended)**
 ```bash
-slb
+slbrowser
+```
+
+**Command Line Interface**
+```bash
+# For direct command execution
+slb search "your query" --max-results 3
+slb analyze https://example.com
 ```
 
 ### Basic Commands
