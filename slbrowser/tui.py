@@ -581,11 +581,21 @@ class CLI:
             self.console.print("[red]Please provide a valid number: /open 1[/red]")
             return
 
+        # Lazy initialize AI manager if we have an API key but it's not initialized
         if not self.ai_manager.is_ready:
-            self.console.print(
-                "[red]AI services not ready. Please set your API key first with /key[/red]"
-            )
-            return
+            if self.ai_manager.api_key:
+                try:
+                    await self.ai_manager.initialize()
+                except Exception as e:
+                    self.console.print(
+                        f"[red]Failed to initialize AI services: {e}[/red]"
+                    )
+                    return
+            else:
+                self.console.print(
+                    "[red]AI services not ready. Please set your API key first with /key[/red]"
+                )
+                return
 
         # Get the selected result
         result = self.app_state.search_results[number - 1]
@@ -646,11 +656,21 @@ class CLI:
             )
             return
 
+        # Lazy initialize AI manager if we have an API key but it's not initialized
         if not self.ai_manager.is_ready:
-            self.console.print(
-                "[red]AI services not ready. Please set your API key first with /key[/red]"
-            )
-            return
+            if self.ai_manager.api_key:
+                try:
+                    await self.ai_manager.initialize()
+                except Exception as e:
+                    self.console.print(
+                        f"[red]Failed to initialize AI services: {e}[/red]"
+                    )
+                    return
+            else:
+                self.console.print(
+                    "[red]AI services not ready. Please set your API key first with /key[/red]"
+                )
+                return
 
         url = args[0]
 
@@ -713,11 +733,21 @@ class CLI:
             )
             return
 
+        # Lazy initialize AI manager if we have an API key but it's not initialized
         if not self.ai_manager.is_ready:
-            self.console.print(
-                "[red]AI services not ready. Please set your API key first with /key[/red]"
-            )
-            return
+            if self.ai_manager.api_key:
+                try:
+                    await self.ai_manager.initialize()
+                except Exception as e:
+                    self.console.print(
+                        f"[red]Failed to initialize AI services: {e}[/red]"
+                    )
+                    return
+            else:
+                self.console.print(
+                    "[red]AI services not ready. Please set your API key first with /key[/red]"
+                )
+                return
 
         # Parse arguments: query and optional depth
         depth = 5  # Default depth

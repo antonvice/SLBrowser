@@ -15,7 +15,7 @@ Key Components:
 
 from __future__ import annotations
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 __author__ = "Anton Vice <anton@selflayer.com>"
 __description__ = "AI-powered terminal web browser for content analysis and research"
 

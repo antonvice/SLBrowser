@@ -52,11 +52,15 @@ def set_version(new_version: str) -> None:
     init_file.write_text(content)
     print(f"✅ Updated __init__.py to version {new_version}")
 
-    # Update pyproject.toml
+    # Update pyproject.toml (only the project version)
     toml_file = Path("pyproject.toml")
     content = toml_file.read_text()
+    # Only update the version in [project] section
     content = re.sub(
-        r'version = ["\']([^"\']+)["\']', f'version = "{new_version}"', content
+        r'(\[project\][^\[]*version = )["\']([^"\']+)["\']',
+        f'\\1"{new_version}"',
+        content,
+        flags=re.MULTILINE | re.DOTALL,
     )
     toml_file.write_text(content)
     print(f"✅ Updated pyproject.toml to version {new_version}")
@@ -90,7 +94,8 @@ def validate_version(version: str) -> bool:
 def format_code() -> None:
     """Format code with black and isort."""
     print("🎨 Formatting code...")
-    run_command("black slbrowser/")
+    # Skip black due to Python 3.12.5 compatibility issue
+    # run_command("black slbrowser/")
     run_command("isort slbrowser/")
     print("✅ Code formatted")
 
