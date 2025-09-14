@@ -1,0 +1,225 @@
+#!/usr/bin/env python3
+"""
+SLBrowser Release Script
+
+Usage:
+    ./release patch    # Increment patch version (0.1.0 -> 0.1.1)
+    ./release minor    # Increment minor version (0.1.0 -> 0.2.0)
+    ./release major    # Increment major version (0.1.0 -> 1.0.0)
+    ./release version x.y.z  # Set specific version
+"""
+
+import re
+import subprocess
+import sys
+from pathlib import Path
+
+
+def run_command(cmd: str, check: bool = True) -> subprocess.CompletedProcess:
+    """Run a shell command and return the result."""
+    print(f"🔄 Running: {cmd}")
+    result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+
+    if check and result.returncode != 0:
+        print(f"❌ Command failed: {cmd}")
+        print(f"Error: {result.stderr}")
+        sys.exit(1)
+
+    return result
+
+
+def get_current_version() -> str:
+    """Get the current version from __init__.py."""
+    init_file = Path("slbrowser/__init__.py")
+    content = init_file.read_text()
+
+    match = re.search(r'__version__ = ["\']([^"\']+)["\']', content)
+    if not match:
+        print("❌ Could not find version in slbrowser/__init__.py")
+        sys.exit(1)
+
+    return match.group(1)
+
+
+def set_version(new_version: str) -> None:
+    """Set the version in __init__.py and pyproject.toml."""
+    # Update __init__.py
+    init_file = Path("slbrowser/__init__.py")
+    content = init_file.read_text()
+    content = re.sub(
+        r'__version__ = ["\']([^"\']+)["\']', f'__version__ = "{new_version}"', content
+    )
+    init_file.write_text(content)
+    print(f"✅ Updated __init__.py to version {new_version}")
+
+    # Update pyproject.toml
+    toml_file = Path("pyproject.toml")
+    content = toml_file.read_text()
+    content = re.sub(
+        r'version = ["\']([^"\']+)["\']', f'version = "{new_version}"', content
+    )
+    toml_file.write_text(content)
+    print(f"✅ Updated pyproject.toml to version {new_version}")
+
+
+def increment_version(current: str, increment_type: str) -> str:
+    """Increment version based on type (patch, minor, major)."""
+    parts = list(map(int, current.split(".")))
+
+    if increment_type == "patch":
+        parts[2] += 1
+    elif increment_type == "minor":
+        parts[1] += 1
+        parts[2] = 0
+    elif increment_type == "major":
+        parts[0] += 1
+        parts[1] = 0
+        parts[2] = 0
+    else:
+        raise ValueError(f"Invalid increment type: {increment_type}")
+
+    return ".".join(map(str, parts))
+
+
+def validate_version(version: str) -> bool:
+    """Validate that version follows semantic versioning."""
+    pattern = r"^\d+\.\d+\.\d+$"
+    return bool(re.match(pattern, version))
+
+
+def format_code() -> None:
+    """Format code with black and isort."""
+    print("🎨 Formatting code...")
+    run_command("black slbrowser/")
+    run_command("isort slbrowser/")
+    print("✅ Code formatted")
+
+
+def build_package() -> None:
+    """Build the package distribution."""
+    print("📦 Building package...")
+
+    # Clean previous builds
+    run_command("rm -rf build/ dist/ *.egg-info/", check=False)
+
+    # Build package
+    run_command("python -m build")
+    print("✅ Package built successfully")
+
+
+def upload_to_pypi(test: bool = False) -> None:
+    """Upload package to PyPI or TestPyPI."""
+
+    print(f"🚀 Uploading to {'TestPyPI' if test else 'PyPI'}...")
+
+    if test:
+        run_command("python -m twine upload --repository testpypi dist/*")
+    else:
+        run_command("python -m twine upload dist/*")
+
+    print(f"✅ Uploaded to {'TestPyPI' if test else 'PyPI'}")
+
+
+def check_git_status() -> None:
+    """Check if git working directory is clean."""
+    result = run_command("git status --porcelain", check=False)
+    if result.stdout.strip():
+        print("⚠️  Git working directory is not clean:")
+        print(result.stdout)
+        response = input("Continue anyway? [y/N]: ")
+        if response.lower() != "y":
+            sys.exit(1)
+
+
+def create_git_tag(version: str) -> None:
+    """Create and push git tag for the release."""
+    print(f"🏷️  Creating git tag v{version}...")
+    run_command("git add .")
+    run_command(f'git commit -m "Release v{version}"')
+    run_command(f"git tag v{version}")
+    run_command("git push")
+    run_command("git push --tags")
+    print(f"✅ Created and pushed tag v{version}")
+
+
+def main():
+    """Main release script logic."""
+    if len(sys.argv) < 2:
+        print(__doc__)
+        sys.exit(1)
+
+    command = sys.argv[1]
+    current_version = get_current_version()
+    print(f"📋 Current version: {current_version}")
+
+    # Determine new version
+    if command in ["patch", "minor", "major"]:
+        new_version = increment_version(current_version, command)
+    elif command == "version" and len(sys.argv) >= 3:
+        new_version = sys.argv[2]
+        if not validate_version(new_version):
+            print(f"❌ Invalid version format: {new_version}")
+            print("Version must be in format: x.y.z")
+            sys.exit(1)
+    else:
+        print(__doc__)
+        sys.exit(1)
+
+    print(f"🎯 New version: {new_version}")
+
+    # Confirmation
+    response = input(f"Release version {new_version}? [y/N]: ")
+    if response.lower() != "y":
+        print("❌ Release cancelled")
+        sys.exit(0)
+
+    try:
+        # Check git status
+        check_git_status()
+
+        # Format code
+        format_code()
+
+        # Update version
+        set_version(new_version)
+
+        # Build package
+        build_package()
+
+        # Test installation
+        print("🧪 Testing package installation...")
+        run_command("pip install dist/*.whl --force-reinstall")
+        run_command(
+            "python -c 'import slbrowser; print(f\"Installed: {slbrowser.__version__}\")'"
+        )
+
+        # Upload to PyPI
+        test_upload = input("Upload to TestPyPI first? [Y/n]: ")
+        if test_upload.lower() != "n":
+            upload_to_pypi(test=True)
+
+            confirm = input("TestPyPI upload successful. Upload to PyPI? [y/N]: ")
+            if confirm.lower() != "y":
+                print("❌ PyPI upload cancelled")
+                sys.exit(0)
+
+        upload_to_pypi(test=False)
+
+        # Create git tag
+        create_git_tag(new_version)
+
+        print(f"🎉 Successfully released SLBrowser v{new_version}!")
+        print(
+            f"📦 Package available at: https://pypi.org/project/slbrowser/{new_version}/"
+        )
+
+    except KeyboardInterrupt:
+        print("\n❌ Release cancelled by user")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Release failed: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()
